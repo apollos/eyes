@@ -5,4 +5,5 @@ Example:
 ./eyes stream test cfg/eyes.cfg  ../Data/weights/eyes.weights ../Data/pic/test/ll.jpg
 ./eyes stream demo cfg/eyes.cfg  ../Data/weights/eyes.weights
 ./eyes stream demo cfg/eyes.cfg  ../Data/weights/eyes.weights ../Data/video/abc.mov
+./eyes stream demo cfg/eyes.cfg  ../Data/weights/eyes.weights SOCKET
 

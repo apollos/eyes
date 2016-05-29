@@ -51,10 +51,10 @@ void *detect_in_thread(void *ptr)
     free_image(det_s);
     convert_stream_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, demo_thresh, probs, boxes, 0);
     if (nms > 0) do_nms(boxes, probs, l.side*l.side*l.n, l.classes, nms);
-    printf("\033[2J");
+    /*printf("\033[2J");
     printf("\033[1;1H");
     printf("\nFPS:%.0f\n",fps);
-    printf("Objects:\n\n");
+    printf("Objects:\n\n");*/
     draw_detections(det, l.side*l.side*l.n, demo_thresh, boxes, probs, voc_names, voc_labels, 20);
     return 0;
 }
@@ -85,8 +85,10 @@ void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, c
     }
 
     if(!cap && socketFlag == 0) error("Couldn't connect to webcam.\n");
-    cvNamedWindow("Stream", CV_WINDOW_NORMAL); 
-    cvResizeWindow("Stream", 512, 512);
+    if(socketFlag != 1){
+		cvNamedWindow("Stream", CV_WINDOW_NORMAL);
+		cvResizeWindow("Stream", 512, 512);
+    }
 
     detection_layer l = net.layers[net.n-1];
     int j;
@@ -110,12 +112,23 @@ void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, c
 
     while(1){
         struct timeval tval_before, tval_after, tval_result;
+        int rst;
         gettimeofday(&tval_before, NULL);
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
-        show_image(disp, "Stream");
+        if(socketFlag){
+        	rst = send_image_socket(disp);
+        	if(rst <= 0){
+        		free_image(disp);
+        		break;
+        	}
+
+        }else
+        	show_image(disp, "Stream");
         free_image(disp);
-        cvWaitKey(1);
+        if (cvWaitKey(5) == 122)
+        	break;
+
         pthread_join(fetch_thread, 0);
         pthread_join(detect_thread, 0);
 
