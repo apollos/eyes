@@ -151,7 +151,7 @@ void demo_coco(char *cfgfile, char *weightfile, float thresh, int cam_index, con
 }
 #else
 void demo_coco(char *cfgfile, char *weightfile, float thresh, int cam_index){
-    fprintf(stderr, "YOLO-COCO demo needs OpenCV for webcam images.\n");
+    fprintf(stderr, "COCO demo needs OpenCV for webcam images.\n");
 }
 #endif
 

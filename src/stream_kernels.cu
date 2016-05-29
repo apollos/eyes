@@ -17,7 +17,7 @@ extern "C" {
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 extern "C" image ipl_to_image(IplImage* src);
-extern "C" void convert_yolo_detections(float *predictions, int classes, int num, int square, int side, int w, int h, float thresh, float **probs, box *boxes, int only_objectness);
+extern "C" void convert_stream_detections(float *predictions, int classes, int num, int square, int side, int w, int h, float thresh, float **probs, box *boxes, int only_objectness);
 
 extern "C" char *voc_names[];
 extern "C" image voc_labels[];
@@ -53,7 +53,7 @@ void *detect_in_thread(void *ptr)
     float *X = det_s.data;
     float *predictions = network_predict(net, X);
     free_image(det_s);
-    convert_yolo_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, demo_thresh, probs, boxes, 0);
+    convert_stream_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, demo_thresh, probs, boxes, 0);
     if (nms > 0) do_nms(boxes, probs, l.side*l.side*l.n, l.classes, nms);
     printf("\033[2J");
     printf("\033[1;1H");
@@ -63,10 +63,10 @@ void *detect_in_thread(void *ptr)
     return 0;
 }
 
-extern "C" void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index)
+extern "C" void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index)
 {
     demo_thresh = thresh;
-    printf("YOLO demo\n");
+    printf("Stream demo\n");
     net = parse_network_cfg(cfgfile);
     if(weightfile){
         load_weights(&net, weightfile);
@@ -104,7 +104,7 @@ extern "C" void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam
         gettimeofday(&tval_before, NULL);
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
-        show_image(disp, "YOLO");
+        show_image(disp, "Stream");
         free_image(disp);
         cvWaitKey(1);
         pthread_join(fetch_thread, 0);
@@ -121,8 +121,8 @@ extern "C" void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam
     }
 }
 #else
-extern "C" void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index){
-    fprintf(stderr, "YOLO demo needs OpenCV for webcam images.\n");
+extern "C" void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index){
+    fprintf(stderr, "stream demo needs OpenCV for webcam images.\n");
 }
 #endif
 

@@ -5,13 +5,14 @@
 #include "parser.h"
 #include "box.h"
 #include "image.h"
+#include "socketStream.h"
 #include <sys/time.h>
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 image ipl_to_image(IplImage* src);
-void convert_yolo_detections(float *predictions, int classes, int num, int square, int side, int w, int h, float thresh, float **probs, box *boxes, int only_objectness);
+void convert_stream_detections(float *predictions, int classes, int num, int square, int side, int w, int h, float thresh, float **probs, box *boxes, int only_objectness);
 
 extern char *voc_names[];
 extern image voc_labels[];
@@ -27,10 +28,15 @@ static image disp ;
 static CvCapture * cap;
 static float fps = 0;
 static float demo_thresh = 0;
+static int socketFlag = 0;
 
 void *fetch_in_thread(void *ptr)
 {
-    in = get_image_from_stream(cap);
+	if(socketFlag){
+		IplImage* src = get_Iplimage_from_socket();
+		in = get_image_from_socket_stream(src);
+	}else
+		in = get_image_from_stream(cap);
     in_s = resize_image(in, net.w, net.h);
     return 0;
 }
@@ -43,7 +49,7 @@ void *detect_in_thread(void *ptr)
     float *X = det_s.data;
     float *predictions = network_predict(net, X);
     free_image(det_s);
-    convert_yolo_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, demo_thresh, probs, boxes, 0);
+    convert_stream_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, demo_thresh, probs, boxes, 0);
     if (nms > 0) do_nms(boxes, probs, l.side*l.side*l.n, l.classes, nms);
     printf("\033[2J");
     printf("\033[1;1H");
@@ -53,10 +59,10 @@ void *detect_in_thread(void *ptr)
     return 0;
 }
 
-void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index, char *filename)
+void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, char *filename)
 {
     demo_thresh = thresh;
-    printf("YOLO demo\n");
+    printf("Stream demo\n");
     net = parse_network_cfg(cfgfile);
     if(weightfile){
         load_weights(&net, weightfile);
@@ -66,14 +72,21 @@ void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index, cha
     srand(2222222);
 
     if(filename){
-        cap = cvCaptureFromFile(filename);
+    	if(strncmp(filename, "SOCKET", strlen("SOCKET")) == 0){
+    		if(prepareSocket() != 0){
+    			error("Couldn't connect with peer.\n");
+    		}
+    		socketFlag = 1;
+    	}else{
+    		cap = cvCaptureFromFile(filename);
+    	}
     }else{
         cap = cvCaptureFromCAM(cam_index);
     }
 
-    if(!cap) error("Couldn't connect to webcam.\n");
-    cvNamedWindow("YOLO", CV_WINDOW_NORMAL); 
-    cvResizeWindow("YOLO", 512, 512);
+    if(!cap && socketFlag == 0) error("Couldn't connect to webcam.\n");
+    cvNamedWindow("Stream", CV_WINDOW_NORMAL); 
+    cvResizeWindow("Stream", 512, 512);
 
     detection_layer l = net.layers[net.n-1];
     int j;
@@ -100,7 +113,7 @@ void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index, cha
         gettimeofday(&tval_before, NULL);
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
         if(pthread_create(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
-        show_image(disp, "YOLO");
+        show_image(disp, "Stream");
         free_image(disp);
         cvWaitKey(1);
         pthread_join(fetch_thread, 0);
@@ -117,8 +130,8 @@ void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index, cha
     }
 }
 #else
-void demo_yolo(char *cfgfile, char *weightfile, float thresh, int cam_index, char *filename){
-    fprintf(stderr, "YOLO demo needs OpenCV for webcam images.\n");
+void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, char *filename){
+    fprintf(stderr, "stream demo needs OpenCV for webcam images.\n");
 }
 #endif
 

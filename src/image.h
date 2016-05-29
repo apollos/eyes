@@ -62,6 +62,7 @@ void show_image_collapsed(image p, char *name);
 #ifdef OPENCV
 void save_image_jpg(image p, char *name);
 image get_image_from_stream(CvCapture *cap);
+image get_image_from_socket_stream(IplImage* src);
 image ipl_to_image(IplImage* src);
 #endif
 

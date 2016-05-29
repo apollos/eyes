@@ -13,7 +13,7 @@
 #endif
 
 extern void run_imagenet(int argc, char **argv);
-extern void run_yolo(int argc, char **argv);
+extern void run_stream(int argc, char **argv);
 extern void run_coco(int argc, char **argv);
 extern void run_writing(int argc, char **argv);
 extern void run_captcha(int argc, char **argv);
@@ -246,8 +246,8 @@ int main(int argc, char **argv)
         run_imagenet(argc, argv);
     } else if (0 == strcmp(argv[1], "average")){
         average(argc, argv);
-    } else if (0 == strcmp(argv[1], "yolo")){
-        run_yolo(argc, argv);
+    } else if (0 == strcmp(argv[1], "stream")){
+        run_stream(argc, argv);
     } else if (0 == strcmp(argv[1], "cifar")){
         run_cifar(argc, argv);
     } else if (0 == strcmp(argv[1], "go")){

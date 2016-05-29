@@ -1,7 +1,7 @@
 import socket, time  
 import sys
-import cv2
-import numpy
+import socket, time, Image, StringIO  
+import cv2.cv as cv  
 
 mySock = 0
 srcSock = 0
@@ -53,29 +53,25 @@ def transferData():
         print "Interrupted!"  
         return -1
     return 0  
-
-def recvall(sock, count):
-    buf = b''
-    while count:
-        newbuf = sock.recv(count)
-        if not newbuf: return None
-        buf += newbuf
-        count -= len(newbuf)
-    return buf
-
 def readData():
     global mySock
     global srcSock
+    global dstSock
+    msg = srcSock.recv(1024 * 1024)  
+    print len(msg)  
+    if not msg:  
+        return -1  
+    jpeg = msg.replace("\-n", "\n") 
 
-    length = recvall(srcSock,16)
-    stringData = recvall(srcSock, int(length))
-    if length == None or stringData == None:
-        return None
-    data = numpy.fromstring(stringData, dtype='uint8')    
-    print length
-    print data
+    buf = StringIO.StringIO(jpeg[0:-1])  
+    buf.seek(0)  
+    pi = Image.open(buf)  
+    img = cv.CreateImageHeader((640, 480), cv.IPL_DEPTH_8U, 3)  
+    cv.SetData(img, pi.tostring())  
+    buf.close()  
+
     #cv.ShowImage("camera_Detect", img)  
-    return data
+    return img
 
 
 
@@ -85,16 +81,14 @@ if __name__ == "__main__":
         print("Usage: python testStreamServ.py ")
         exit(-1)
     startServer()    
-    cv2.namedWindow("camera_Detect")  
+    cv.NamedWindow("camera_Detect")  
     while True:  
         #rst = transferData()
-        data = readData()        
-        if(data == None):
+        rst = readData()
+        if(rst != 0):
             break;
-        decimg=cv2.imdecode(data,1)   
-        cv2.imshow('camera_Detect',decimg)
-        if cv2.waitKey(10) == 122:  
-            break;             
+        if cv.WaitKey(10) == 122:  
+            break;
     closeServer()
-    cv2.destroyAllWindows()
+    cv.DestroyAllWindows()
 

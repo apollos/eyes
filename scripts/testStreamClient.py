@@ -1,12 +1,13 @@
 import cv2.cv as cv  
 import socket, time, Image, StringIO  
+import sys
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python testStreamClient.py <target ip> <port>", file=sys.stderr)
+        print("Usage: python testStreamClient.py <target ip> <port>")
         exit(-1)
     HOST = sys.argv[1]
-    PORT = sys.argv[2]
+    PORT = int(sys.argv[2])
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
     sock.connect((HOST, PORT))  
     f = sock.makefile()  

@@ -96,7 +96,7 @@ void train_vid_rnn(char *cfgfile, char *weightfile)
     int batch = net.batch / net.time_steps;
 
     network extractor = parse_network_cfg("cfg/extractor.cfg");
-    load_weights(&extractor, "/home/pjreddie/trained/yolo-coco.conv");
+    load_weights(&extractor, "/home/pjreddie/trained/coco.conv");
 
     while(get_current_batch(net) < net.max_batches){
         i += 1;
@@ -149,7 +149,7 @@ image save_reconstruction(network net, image *init, float *feat, char *name, int
 void generate_vid_rnn(char *cfgfile, char *weightfile)
 {
     network extractor = parse_network_cfg("cfg/extractor.recon.cfg");
-    load_weights(&extractor, "/home/pjreddie/trained/yolo-coco.conv");
+    load_weights(&extractor, "../trained/coco.conv");
 
     network net = parse_network_cfg(cfgfile);
     if(weightfile){

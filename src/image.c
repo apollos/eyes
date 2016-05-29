@@ -369,6 +369,12 @@ void show_image_cv(image p, const char *name)
         rgbgr_image(im);
         return im;
     }
+    image get_image_from_socket_stream(IplImage* src)
+    {
+    	image im = ipl_to_image(src);
+    	rgbgr_image(im);
+    	return im;
+    }
 #endif
 
 #ifdef OPENCV

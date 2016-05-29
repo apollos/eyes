@@ -8,7 +8,7 @@
 #include "opencv2/highgui/highgui_c.h"
 #endif
 
-// ./darknet nightmare cfg/extractor.recon.cfg ~/trained/yolo-coco.conv frame6.png -reconstruct -iters 500 -i 3 -lambda .1 -rate .01 -smooth 2
+// ./eyes nightmare cfg/extractor.recon.cfg ~/trained/coco.conv frame6.png -reconstruct -iters 500 -i 3 -lambda .1 -rate .01 -smooth 2
 
 float abs_mean(float *x, int n)
 {
