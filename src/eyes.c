@@ -12,21 +12,12 @@
 #include "opencv2/highgui/highgui_c.h"
 #endif
 
-extern void run_imagenet(int argc, char **argv);
 extern void run_stream(int argc, char **argv);
-extern void run_coco(int argc, char **argv);
-extern void run_writing(int argc, char **argv);
-extern void run_captcha(int argc, char **argv);
-extern void run_nightmare(int argc, char **argv);
-extern void run_dice(int argc, char **argv);
 extern void run_compare(int argc, char **argv);
 extern void run_classifier(int argc, char **argv);
 extern void run_char_rnn(int argc, char **argv);
-extern void run_vid_rnn(int argc, char **argv);
 extern void run_tag(int argc, char **argv);
-extern void run_cifar(int argc, char **argv);
-extern void run_go(int argc, char **argv);
-extern void run_art(int argc, char **argv);
+
 
 void change_rate(char *filename, float scale, float add)
 {
@@ -242,44 +233,18 @@ int main(int argc, char **argv)
     }
 #endif
 
-    if(0==strcmp(argv[1], "imagenet")){
-        run_imagenet(argc, argv);
-    } else if (0 == strcmp(argv[1], "average")){
-        average(argc, argv);
-    } else if (0 == strcmp(argv[1], "stream")){
+    if (0 == strcmp(argv[1], "stream")){
         run_stream(argc, argv);
-    } else if (0 == strcmp(argv[1], "cifar")){
-        run_cifar(argc, argv);
-    } else if (0 == strcmp(argv[1], "go")){
-        run_go(argc, argv);
     } else if (0 == strcmp(argv[1], "rnn")){
         run_char_rnn(argc, argv);
-    } else if (0 == strcmp(argv[1], "vid")){
-        run_vid_rnn(argc, argv);
-    } else if (0 == strcmp(argv[1], "coco")){
-        run_coco(argc, argv);
     } else if (0 == strcmp(argv[1], "classifier")){
         run_classifier(argc, argv);
-    } else if (0 == strcmp(argv[1], "art")){
-        run_art(argc, argv);
     } else if (0 == strcmp(argv[1], "tag")){
         run_tag(argc, argv);
     } else if (0 == strcmp(argv[1], "compare")){
         run_compare(argc, argv);
-    } else if (0 == strcmp(argv[1], "dice")){
-        run_dice(argc, argv);
-    } else if (0 == strcmp(argv[1], "writing")){
-        run_writing(argc, argv);
     } else if (0 == strcmp(argv[1], "test")){
         test_resize(argv[2]);
-    } else if (0 == strcmp(argv[1], "captcha")){
-        run_captcha(argc, argv);
-    } else if (0 == strcmp(argv[1], "nightmare")){
-        run_nightmare(argc, argv);
-    } else if (0 == strcmp(argv[1], "change")){
-        change_rate(argv[2], atof(argv[3]), (argc > 4) ? atof(argv[4]) : 0);
-    } else if (0 == strcmp(argv[1], "rgbgr")){
-        rgbgr_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "denormalize")){
         denormalize_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "normalize")){
