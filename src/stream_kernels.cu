@@ -10,6 +10,7 @@ extern "C" {
 #include "parser.h"
 #include "box.h"
 #include "image.h"
+#include "vocDefine.h"
 #include <sys/time.h>
 }
 
@@ -59,7 +60,7 @@ void *detect_in_thread(void *ptr)
     printf("\033[1;1H");
     printf("\nFPS:%.0f\n",fps);
     printf("Objects:\n\n");
-    draw_detections(det, l.side*l.side*l.n, demo_thresh, boxes, probs, voc_names, voc_labels, 20);
+    draw_detections(det, l.side*l.side*l.n, demo_thresh, boxes, probs, voc_names, voc_labels, VOC_LABLE_SIZE);
     return 0;
 }
 
