@@ -7,4 +7,4 @@ Example:
 ./eyes stream demo cfg/eyes.cfg  ../Data/weights/eyes.weights ../Data/video/abc.mov
 ./eyes stream demo cfg/eyes.cfg  ../Data/weights/eyes.weights SOCKET
 
-python testRemoteCam.py localhost 9119 /home/yu/workspace/Data/video/723524_535269319829012_2051799405_n.mp4 10
+python scripts/testRemoteCam.py localhost 9119 data/723524_535269319829012_2051799405_n.mp4 10

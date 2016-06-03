@@ -7,18 +7,24 @@ import os
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3 and len(sys.argv) != 5:
+    if len(sys.argv) < 3 or len(sys.argv) > 5:
         print("Usage: python testRemoteCam.py <target ip> <port> [video file] [start pos percentage]")
         exit(-1)
-    if len(sys.argv) == 5:
+    if len(sys.argv) > 3:
         videoPath = sys.argv[3]
-        percentagePos = int(sys.argv[4])
+        if len(sys.argv) == 5:
+            percentagePos = int(sys.argv[4])
+        else:
+            percentagePos = 0
         if not os.path.exists(videoPath):
             print("Can not open %s!" % videoPath)
             exit(-1)
         capture = cv2.VideoCapture(videoPath)  
         count = capture.get(cv.CV_CAP_PROP_FRAME_COUNT); 
-        capture.set(cv.CV_CAP_PROP_POS_FRAMES,int(count/percentagePos)); 
+        if percentagePos == 0:
+            capture.set(cv.CV_CAP_PROP_POS_FRAMES,0); 
+        else:
+            capture.set(cv.CV_CAP_PROP_POS_FRAMES,int(count/percentagePos)); 
     else:
         CAMIDX = 0
         capture = cv2.VideoCapture(CAMIDX)  
