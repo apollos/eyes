@@ -3,3 +3,4 @@
 *.rst
 obj/
 eyes
+*.weights
