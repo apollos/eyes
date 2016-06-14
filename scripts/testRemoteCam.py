@@ -42,7 +42,7 @@ if __name__ == "__main__":
     sock.connect((HOST, int(PORT)))  
     print "Host %s connected\n" % (HOST)
     
-    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),85]
+    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),75]
     dim = (640, 480)
     while True:  
         ret, img = capture.read()
@@ -68,5 +68,5 @@ if __name__ == "__main__":
         if cv2.waitKey(50) == 122:  
             break  
           
-    #sock.close()
+    sock.close()
     cv2.destroyAllWindows() 
