@@ -34,10 +34,10 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int  quit(char* msg, int retval);
 
-int prepareSocket()
+int prepareSocket(int port)
 {
     struct sockaddr_in server, peerAddr;
-    const int server_port = 9119;
+    const int server_port = port;
     socklen_t peerLen;
     char ipAddr[INET_ADDRSTRLEN];
     //sndImgHead imgHead;

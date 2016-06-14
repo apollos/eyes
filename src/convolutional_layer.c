@@ -222,6 +222,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     cudnnCreateTensorDescriptor(&l.ddstTensorDesc);
     cudnnCreateFilterDescriptor(&l.dfilterDesc);
     cudnnCreateConvolutionDescriptor(&l.convDesc);
+    
     cudnnSetTensor4dDescriptor(l.dsrcTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, l.batch, l.c, l.h, l.w); 
     cudnnSetTensor4dDescriptor(l.ddstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, l.batch, l.out_c, l.out_h, l.out_w); 
     cudnnSetFilter4dDescriptor(l.dfilterDesc, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW, l.n, l.c, l.size, l.size); 
@@ -229,6 +230,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     cudnnSetTensor4dDescriptor(l.srcTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, l.batch, l.c, l.h, l.w); 
     cudnnSetTensor4dDescriptor(l.dstTensorDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, l.batch, l.out_c, l.out_h, l.out_w); 
     cudnnSetFilter4dDescriptor(l.filterDesc, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW, l.n, l.c, l.size, l.size); 
+   
     int padding = l.pad ? l.size/2 : 0;
     cudnnSetConvolution2dDescriptor(l.convDesc, padding, padding, l.stride, l.stride, 1, 1, CUDNN_CROSS_CORRELATION);
     cudnnGetConvolutionForwardAlgorithm(cudnn_handle(),

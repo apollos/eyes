@@ -8,6 +8,7 @@
 #include "socketStream.h"
 #include "vocDefine.h"
 #include <sys/time.h>
+#include <string.h>
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui.hpp"
@@ -73,8 +74,10 @@ void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, c
     srand(2222222);
 
     if(filename){
-    	if(strncmp(filename, "SOCKET", strlen("SOCKET")) == 0){
-    		if(prepareSocket() != 0){
+    	if(strncmp(filename, "SOCKET:", strlen("SOCKET:")) == 0){
+    		char* portStrPtr = strstr(filename, ":");
+    		int port = atoi(portStrPtr+1);
+    		if(prepareSocket(port) != 0){
     			error("Couldn't connect with peer.\n");
     		}
     		socketFlag = 1;
