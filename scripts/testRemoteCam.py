@@ -46,6 +46,11 @@ if __name__ == "__main__":
     dim = (640, 480)
     while True:  
         ret, img = capture.read()
+        
+        if(not ret):
+            capture.set(cv.CV_CAP_PROP_POS_FRAMES,int(count/percentagePos));
+            continue
+        
         img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
         result, imgencode = cv2.imencode('.jpg', img, encode_param)
         data = numpy.array(imgencode)
