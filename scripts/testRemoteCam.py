@@ -31,8 +31,8 @@ if __name__ == "__main__":
     if not capture.isOpened():
         print("Can not open Cam!")
         exit(-1)
-    capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640)  
-    capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480)  
+    #capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640)  
+    #capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480)  
     cv2.namedWindow("camera_Capture", cv.CV_WINDOW_AUTOSIZE)  
       
     HOST = sys.argv[1]
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     dim = (640, 480)
     while True:  
         ret, img = capture.read()
-        img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+        #img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
         result, imgencode = cv2.imencode('.jpg', img, encode_param)
         data = numpy.array(imgencode)
         stringData = data.tostring()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             break
         
         #time.sleep(0.1)  
-        cv2.imshow("camera_Capture", img)  
+        #cv2.imshow("camera_Capture", img)  
         if cv2.waitKey(50) == 122:  
             break  
           
