@@ -46,8 +46,8 @@ int prepareSocket(int port)
     int socketIdx = 0;
     char sockdata[IMAGE_LEN_MESSAGE_LEN];
     hndshkMess *handshake;
-    int picH=0;
-    int picW=0;
+    int picH=480;
+    int picW=640;
     int i, bytes;
 
 	/*dispTmp = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 3);
@@ -88,12 +88,17 @@ int prepareSocket(int port)
                 quit("recv failed", bytes);
             }
         } 
+        for(i =0; i< IMAGE_LEN_MESSAGE_LEN; i ++)
+            printf("[%x]", sockdata[i]);
+        printf("\n");
         handshake = (hndshkMess*) sockdata;
-        if (strncmp("SND",handshake->msg, 3) == 0)
+        if (strncmp("SEND",handshake->msg, 3) == 0)
         {
-            picH = handshake->height;
-            picW = handshake->width;
-            printf("H:%d, W:%d\n", picH,picW);
+            picH = ntohl(handshake->height);
+            picW = ntohl(handshake->width);
+            fprintf(stdout, "H:%d, W:%d\n", picH,picW);
+            char* ttch = (char*) &(handshake->height);
+            fprintf(stdout, "[%x, %x, %x, %x]\n", ttch[0], ttch[1], ttch[2], ttch[3]);
         }
     }
     

@@ -4,6 +4,7 @@ import numpy
 import cv2.cv as cv
 import socket
 import os
+import struct
 
 
 if __name__ == "__main__":
@@ -32,7 +33,7 @@ if __name__ == "__main__":
         print("Can not open Cam!")
         exit(-1)
     #capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640)  
-    #capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480)  
+    #capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480) 
     cv2.namedWindow("camera_Capture", cv.CV_WINDOW_AUTOSIZE)  
       
     HOST = sys.argv[1]
@@ -41,16 +42,28 @@ if __name__ == "__main__":
     
     sock.connect((HOST, int(PORT)))  
     print "Host %s connected\n" % (HOST)
+    #get image size
+    ret, img = capture.read()
+    high, width, channel = img.shape
+    handshake='SEND'
+    packStr = '!%ds3I' % len(handshake)
+    sndStr = struct.pack(packStr,handshake,high, width, channel)
+    print sndStr
+    bytes = sock.send( sndStr.ljust(16) );
     
     encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),75]
     dim = (640, 480)
     while True:  
         ret, img = capture.read()
+        
+        if(not ret):
+            capture.set(cv.CV_CAP_PROP_POS_FRAMES,int(count/percentagePos));
+            continue
+        
         #img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
         result, imgencode = cv2.imencode('.jpg', img, encode_param)
         data = numpy.array(imgencode)
         stringData = data.tostring()
-        print len(stringData)
         
         try:  
             bytes = sock.send( str(len(stringData)).ljust(16));
@@ -64,7 +77,7 @@ if __name__ == "__main__":
             break
         
         #time.sleep(0.1)  
-        #cv2.imshow("camera_Capture", img)  
+        cv2.imshow("camera_Capture", img)  
         if cv2.waitKey(50) == 122:  
             break  
           

@@ -7,9 +7,9 @@ int send_image_socket(const image disp);
 typedef struct hndshkMessType
 {
     char msg[3];
-    int height;
-    int width;
-    int channel;
+    unsigned int height;
+    unsigned int width;
+    unsigned int channel;
 }hndshkMess;
 #endif
 
