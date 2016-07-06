@@ -17,8 +17,8 @@ image voc_labels[VOC_LABLE_SIZE];
 
 void train_stream(char *cfgfile, char *weightfile)
 {
-    char *train_images = "/home/yu/workspace/Data/VOC\ data/train.txt";
-    char *backup_directory = "/home/yu/workspace/Data/VOC\ data/weightBackup/";
+    char *train_images = "/home/yu/workspace/Data/vocData/train.txt";
+    char *backup_directory = "/home/yu/workspace/Data/vocData/weightBackup/";
     srand(time(0));
     data_seed = time(0);
     char *base = basecfg(cfgfile);
