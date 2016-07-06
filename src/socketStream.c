@@ -88,17 +88,12 @@ int prepareSocket(int port)
                 quit("recv failed", bytes);
             }
         } 
-        for(i =0; i< IMAGE_LEN_MESSAGE_LEN; i ++)
-            printf("[%x]", sockdata[i]);
-        printf("\n");
         handshake = (hndshkMess*) sockdata;
         if (strncmp("SEND",handshake->msg, 3) == 0)
         {
             picH = ntohl(handshake->height);
             picW = ntohl(handshake->width);
             fprintf(stdout, "H:%d, W:%d\n", picH,picW);
-            char* ttch = (char*) &(handshake->height);
-            fprintf(stdout, "[%x, %x, %x, %x]\n", ttch[0], ttch[1], ttch[2], ttch[3]);
         }
     }
     
