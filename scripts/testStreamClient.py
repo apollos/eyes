@@ -1,8 +1,9 @@
 import cv2.cv as cv  
 import cv2
-import socket, time, Image, StringIO  
+import socket, time, StringIO  
 import sys
 import numpy as np
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -11,8 +12,13 @@ if __name__ == "__main__":
     HOST = sys.argv[1]
     PORT = int(sys.argv[2])
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
-    sock.connect((HOST, PORT))        
-    cv2.namedWindow("DetectResult")  
+    sock.connect((HOST, PORT))      
+    handshake='RCV'
+    packStr = '!%dsiii' % len(handshake)
+    sndStr = struct.pack(packStr,handshake,0, 0, 0)
+    bytes = sock.send( str(len(sndStr)).ljust(16));
+    bytes += sock.send( stringData );	
+    cv2.namedWindow("DetectResult", cv.CV_WINDOW_AUTOSIZE)  
     #img = cv2.createImageHeader((640, 480), cv.IPL_DEPTH_8U, 3)  
       
     while True:        
