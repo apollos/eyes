@@ -7,7 +7,6 @@
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 
-void reconstruct_picture(network net, float *features, image recon, image update, float rate, float momentum, float lambda, int smooth_size, int iters);
 
 
 typedef struct {
@@ -96,7 +95,7 @@ void train_vid_rnn(char *cfgfile, char *weightfile)
     int batch = net.batch / net.time_steps;
 
     network extractor = parse_network_cfg("cfg/extractor.cfg");
-    load_weights(&extractor, "/home/pjreddie/trained/coco.conv");
+    load_weights(&extractor, "trained/rnn.conv");
 
     while(get_current_batch(net) < net.max_batches){
         i += 1;
@@ -149,7 +148,7 @@ image save_reconstruction(network net, image *init, float *feat, char *name, int
 void generate_vid_rnn(char *cfgfile, char *weightfile)
 {
     network extractor = parse_network_cfg("cfg/extractor.recon.cfg");
-    load_weights(&extractor, "../trained/coco.conv");
+    load_weights(&extractor, "trained/rnn.conv");
 
     network net = parse_network_cfg(cfgfile);
     if(weightfile){
@@ -159,7 +158,7 @@ void generate_vid_rnn(char *cfgfile, char *weightfile)
     set_batch_network(&net, 1);
 
     int i;
-    CvCapture *cap = cvCaptureFromFile("/extra/vid/ILSVRC2015/Data/VID/snippets/val/ILSVRC2015_val_00007030.mp4");
+    CvCapture *cap = cvCaptureFromFile("data/VID/snippets/val/ILSVRC2015_val_00007030.mp4");
     float *feat;
     float *next;
     image last;
@@ -203,6 +202,68 @@ void run_vid_rnn(int argc, char **argv)
     //char *filename = (argc > 5) ? argv[5]: 0;
     if(0==strcmp(argv[2], "train")) train_vid_rnn(cfg, weights);
     else if(0==strcmp(argv[2], "generate")) generate_vid_rnn(cfg, weights);
+}
+void reconstruct_picture(network net, float *features, image recon, image update, float rate, float momentum, float lambda, int smooth_size, int iters)
+{
+    int iter = 0;
+    for (iter = 0; iter < iters; ++iter) {
+        image delta = make_image(recon.w, recon.h, recon.c);
+
+        network_state state = {0};
+#ifdef GPU
+        state.input = cuda_make_array(recon.data, recon.w*recon.h*recon.c);
+        state.delta = cuda_make_array(delta.data, delta.w*delta.h*delta.c);
+        state.truth = cuda_make_array(features, get_network_output_size(net));
+
+        forward_network_gpu(net, state);
+        backward_network_gpu(net, state);
+
+        cuda_pull_array(state.delta, delta.data, delta.w*delta.h*delta.c);
+
+        cuda_free(state.input);
+        cuda_free(state.delta);
+        cuda_free(state.truth);
+#else
+        state.input = recon.data;
+        state.delta = delta.data;
+        state.truth = features;
+
+        forward_network(net, state);
+        backward_network(net, state);
+#endif
+
+        axpy_cpu(recon.w*recon.h*recon.c, 1, delta.data, 1, update.data, 1); 
+        smooth(recon, update, lambda, smooth_size);
+
+        axpy_cpu(recon.w*recon.h*recon.c, rate, update.data, 1, recon.data, 1); 
+        scal_cpu(recon.w*recon.h*recon.c, momentum, update.data, 1); 
+
+        //float mag = mag_array(recon.data, recon.w*recon.h*recon.c);
+        //scal_cpu(recon.w*recon.h*recon.c, 600/mag, recon.data, 1);
+
+        constrain_image(recon);
+        free_image(delta);
+    }   
+}
+void smooth(image recon, image update, float lambda, int num)
+{
+    int i, j, k;
+    int ii, jj; 
+    for(k = 0; k < recon.c; ++k){
+        for(j = 0; j < recon.h; ++j){
+            for(i = 0; i < recon.w; ++i){
+                int out_index = i + recon.w*(j + recon.h*k);
+                for(jj = j-num; jj <= j + num && jj < recon.h; ++jj){
+                    if (jj < 0) continue;
+                    for(ii = i-num; ii <= i + num && ii < recon.w; ++ii){
+                        if (ii < 0) continue;
+                        int in_index = ii + recon.w*(jj + recon.h*k);
+                        update.data[out_index] += lambda * (recon.data[in_index] - recon.data[out_index]);
+                    }
+                }
+            }
+        }
+    }   
 }
 #else
 void run_vid_rnn(int argc, char **argv){}

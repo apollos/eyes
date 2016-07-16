@@ -64,6 +64,7 @@ float get_current_rate(network net)
         case EXP:
             return net.learning_rate * pow(net.gamma, batch_num);
         case POLY:
+            if (batch_num < net.burn_in) return net.learning_rate * pow((float)batch_num / net.burn_in, net.power);
             return net.learning_rate * pow(1 - (float)batch_num / net.max_batches, net.power);
         case RANDOM:
             return net.learning_rate * pow(rand_uniform(0,1), net.power);
@@ -137,6 +138,7 @@ network make_network(int n)
 
 void forward_network(network net, network_state state)
 {
+    state.workspace = net.workspace;
     int i;
     for(i = 0; i < net.n; ++i){
         state.index = i;
@@ -252,6 +254,7 @@ void backward_network(network net, network_state state)
     int i;
     float *original_input = state.input;
     float *original_delta = state.delta;
+    state.workspace = net.workspace;
     for(i = net.n-1; i >= 0; --i){
         state.index = i;
         if(i == 0){
@@ -390,6 +393,11 @@ void set_batch_network(network *net, int b)
     int i;
     for(i = 0; i < net->n; ++i){
         net->layers[i].batch = b;
+        #ifdef CUDNN
+        if(net->layers[i].type == CONVOLUTIONAL){
+            cudnn_convolutional_setup(net->layers + i);
+        }
+        #endif
     }
 }
 
@@ -400,6 +408,7 @@ int resize_network(network *net, int w, int h)
     net->w = w;
     net->h = h;
     int inputs = 0;
+    size_t workspace_size = 0;
     //fprintf(stderr, "Resizing to %d x %d...", w, h);
     //fflush(stderr);
     for (i = 0; i < net->n; ++i){
@@ -419,12 +428,20 @@ int resize_network(network *net, int w, int h)
         }else{
             error("Cannot resize this type of layer");
         }
+        if(l.workspace_size > workspace_size) workspace_size = l.workspace_size;
         inputs = l.outputs;
         net->layers[i] = l;
         w = l.out_w;
         h = l.out_h;
         if(l.type == AVGPOOL) break;
     }
+#ifdef GPU
+        cuda_free(net->workspace);
+        net->workspace = cuda_make_array(0, (workspace_size-1)/sizeof(float)+1);
+#else
+        free(net->workspace);
+        net->workspace = calloc(1, workspace_size);
+#endif
     //fprintf(stderr, " Done!\n");
     return 0;
 }
