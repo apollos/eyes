@@ -13,11 +13,8 @@
 #endif
 
 extern void run_stream(int argc, char **argv);
-extern void run_compare(int argc, char **argv);
-extern void run_classifier(int argc, char **argv);
 extern void run_char_rnn(int argc, char **argv);
-extern void run_tag(int argc, char **argv);
-
+extern void run_vid_rnn(int argc, char **argv);
 
 void change_rate(char *filename, float scale, float add)
 {
@@ -77,6 +74,23 @@ void average(int argc, char *argv[])
         }
     }
     save_weights(sum, outfile);
+}
+
+void operations(char *cfgfile)
+{
+    gpu_index = -1;
+    network net = parse_network_cfg(cfgfile);
+    int i;
+    long ops = 0;
+    for(i = 0; i < net.n; ++i){
+        layer l = net.layers[i];
+        if(l.type == CONVOLUTIONAL){
+            ops += 2 * l.n * l.size*l.size*l.c * l.out_h*l.out_w;
+        } else if(l.type == CONNECTED){
+            ops += 2 * l.inputs * l.outputs;
+        }
+    }
+    printf("Floating Point Operations: %ld\n", ops);
 }
 
 void partial(char *cfgfile, char *weightfile, char *outfile, int max)
@@ -235,24 +249,32 @@ int main(int argc, char **argv)
 
     if (0 == strcmp(argv[1], "stream")){
         run_stream(argc, argv);
+    } else if (0 == strcmp(argv[1], "average")){
+        average(argc, argv);
     } else if (0 == strcmp(argv[1], "rnn")){
         run_char_rnn(argc, argv);
-    } else if (0 == strcmp(argv[1], "classifier")){
-        run_classifier(argc, argv);
-    } else if (0 == strcmp(argv[1], "tag")){
-        run_tag(argc, argv);
-    } else if (0 == strcmp(argv[1], "compare")){
-        run_compare(argc, argv);
+    } else if (0 == strcmp(argv[1], "vid")){
+        run_vid_rnn(argc, argv);
+    } else if (0 == strcmp(argv[1], "3d")){
+        composite_3d(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "test")){
         test_resize(argv[2]);
+    } else if (0 == strcmp(argv[1], "change")){
+        change_rate(argv[2], atof(argv[3]), (argc > 4) ? atof(argv[4]) : 0);
+    } else if (0 == strcmp(argv[1], "rgbgr")){
+        rgbgr_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "denormalize")){
         denormalize_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "normalize")){
         normalize_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "rescale")){
         rescale_net(argv[2], argv[3], argv[4]);
+    } else if (0 == strcmp(argv[1], "ops")){
+        operations(argv[2]);
     } else if (0 == strcmp(argv[1], "partial")){
         partial(argv[2], argv[3], argv[4], atoi(argv[5]));
+    } else if (0 == strcmp(argv[1], "average")){
+        average(argc, argv);
     } else if (0 == strcmp(argv[1], "stacked")){
         stacked(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "visualize")){

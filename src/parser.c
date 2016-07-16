@@ -257,12 +257,14 @@ detection_layer parse_detection(list *options, size_params params)
     layer.softmax = option_find_int(options, "softmax", 0);
     layer.sqrt = option_find_int(options, "sqrt", 0);
 
+    layer.max_boxes = option_find_int_quiet(options, "max",30);
     layer.coord_scale = option_find_float(options, "coord_scale", 1);
     layer.forced = option_find_int(options, "forced", 0);
     layer.object_scale = option_find_float(options, "object_scale", 1);
     layer.noobject_scale = option_find_float(options, "noobject_scale", 1);
     layer.class_scale = option_find_float(options, "class_scale", 1);
     layer.jitter = option_find_float(options, "jitter", .2);
+    layer.random = option_find_int_quiet(options, "random", 0);
     return layer;
 }
 
@@ -466,6 +468,7 @@ void parse_net_options(list *options, network *net)
 
     char *policy_s = option_find_str(options, "policy", "constant");
     net->policy = get_policy(policy_s);
+    net->burn_in = option_find_int_quiet(options, "burn_in", 0);
     if(net->policy == STEP){
         net->step = option_find_int(options, "step", 1);
         net->scale = option_find_float(options, "scale", 1);
@@ -522,6 +525,7 @@ network parse_network_cfg(char *filename)
     params.c = net.c;
     params.inputs = net.inputs;
     params.batch = net.batch;
+    printf("Batch %d\n", params.batch);
     params.time_steps = net.time_steps;
 
     size_t workspace_size = 0;
@@ -600,8 +604,11 @@ network parse_network_cfg(char *filename)
     net.outputs = get_network_output_size(net);
     net.output = get_network_output(net);
     if(workspace_size){
+    printf("%ldM\n", workspace_size/(1024*1024));
 #ifdef GPU
         net.workspace = cuda_make_array(0, (workspace_size-1)/sizeof(float)+1);
+#else
+        net.workspace = calloc(1, workspace_size);
 #endif
     }
     return net;
@@ -1017,7 +1024,6 @@ void load_convolutional_weights_binary(layer l, FILE *fp)
             }
         }
     }
-    binarize_filters2(l.filters, l.n, l.c*l.size*l.size, l.cfilters, l.scales);
 #ifdef GPU
     if(gpu_index >= 0){
         push_convolutional_layer(l);
@@ -1042,7 +1048,7 @@ void load_convolutional_weights(layer l, FILE *fp)
     if (l.flipped) {
         transpose_matrix(l.filters, l.c*l.size*l.size, l.n);
     }
-    if (l.binary) binarize_filters(l.filters, l.n, l.c*l.size*l.size, l.filters);
+    //if (l.binary) binarize_filters(l.filters, l.n, l.c*l.size*l.size, l.filters);
 #ifdef GPU
     if(gpu_index >= 0){
         push_convolutional_layer(l);

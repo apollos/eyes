@@ -28,6 +28,7 @@ typedef enum {
     CRNN,
     BATCHNORM,
     NETWORK,
+    XNOR,
     BLANK
 } LAYER_TYPE;
 
@@ -50,6 +51,7 @@ struct layer{
     int h,w,c;
     int out_h, out_w, out_c;
     int n;
+    int max_boxes;
     int groups;
     int size;
     int side;
@@ -86,6 +88,7 @@ struct layer{
     float object_scale;
     float noobject_scale;
     float class_scale;
+    int random;
 
     int dontload;
     int dontloadscales;
@@ -101,6 +104,9 @@ struct layer{
     char  *cfilters;
     float *filter_updates;
     float *state;
+    float *prev_state;
+    float *forgot_state;
+    float *forgot_delta;
     float *state_delta;
 
     float *concat;
@@ -157,6 +163,12 @@ struct layer{
 
     struct layer *input_h_layer;
     struct layer *state_h_layer;
+
+    float *z_cpu;
+    float *r_cpu;
+    float *h_cpu;
+
+    float *binary_input;
 
     size_t workspace_size;
 

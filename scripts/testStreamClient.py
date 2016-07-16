@@ -1,8 +1,10 @@
 import cv2.cv as cv  
 import cv2
-import socket, time, StringIO  
+import socket, time, StringIO
 import sys
 import numpy as np
+import struct
+
 
 
 if __name__ == "__main__":
@@ -13,11 +15,10 @@ if __name__ == "__main__":
     PORT = int(sys.argv[2])
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
     sock.connect((HOST, PORT))      
-    handshake='RCV'
-    packStr = '!%dsiii' % len(handshake)
+    handshake='RECV'
+    packStr = '!%ds3I' % len(handshake)
     sndStr = struct.pack(packStr,handshake,0, 0, 0)
-    bytes = sock.send( str(len(sndStr)).ljust(16));
-    bytes += sock.send( stringData );	
+    bytes = sock.send(sndStr.ljust(16));	
     cv2.namedWindow("DetectResult", cv.CV_WINDOW_AUTOSIZE)  
     #img = cv2.createImageHeader((640, 480), cv.IPL_DEPTH_8U, 3)  
       

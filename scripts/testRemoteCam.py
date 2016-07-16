@@ -29,11 +29,11 @@ if __name__ == "__main__":
     else:
         CAMIDX = 0
         capture = cv2.VideoCapture(CAMIDX)  
+        capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640*0.8)  
+        capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480*0.8) 
     if not capture.isOpened():
         print("Can not open Cam!")
         exit(-1)
-    #capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640)  
-    #capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480) 
     cv2.namedWindow("camera_Capture", cv.CV_WINDOW_AUTOSIZE)  
       
     HOST = sys.argv[1]
@@ -44,15 +44,15 @@ if __name__ == "__main__":
     print "Host %s connected\n" % (HOST)
     #get image size
     ret, img = capture.read()
-    high, width, channel = image.shape
-    handshake='SND'
-    packStr = '!%dsiii' % len(handshake)
+    high, width, channel = img.shape
+    handshake='SEND'
+    packStr = '!%ds3I' % len(handshake)
     sndStr = struct.pack(packStr,handshake,high, width, channel)
-    bytes = sock.send( str(len(sndStr)).ljust(16));
-    bytes += sock.send( stringData );
+    print sndStr
+    bytes = sock.send( sndStr.ljust(16) );
     
     encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),75]
-    dim = (640, 480)
+    #dim = (640, 480)
     while True:  
         ret, img = capture.read()
         

@@ -14,13 +14,14 @@
 #include <pthread.h>
 
 #include "image.h"
+#include "socketStream.h"
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
 #define IMAGE_LEN_MESSAGE_LEN 16
 #define SOCKET_CLIENT_NUM 2
-#define SOCKET_IN_STREAM 0
-#define SOCKET_OUT_STREAM 1
+#define SOCKET_IN_STREAM 1
+#define SOCKET_OUT_STREAM 0
 
 IplImage* imgShow;
 IplImage* imgSend;
@@ -43,14 +44,11 @@ int prepareSocket(int port)
     //sndImgHead imgHead;
     memset(clientsock, 0, sizeof(clientsock));
     int socketIdx = 0;
-    /* create image */
-	imgShow = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 3);
-	cvCreateData(imgShow);
-	cvZero(imgShow);
-
-	imgSend = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 3);
-	cvCreateData(imgSend);
-	cvZero(imgSend);
+    char sockdata[IMAGE_LEN_MESSAGE_LEN];
+    hndshkMess *handshake;
+    int picH=480;
+    int picW=640;
+    int i, bytes;
 
 	/*dispTmp = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 3);
 	cvCreateData(dispTmp);
@@ -85,7 +83,28 @@ int prepareSocket(int port)
 		getpeername(clientsock[socketIdx],(struct sockaddr *)&peerAddr,&peerLen);
 		printf("Get Connection from %s:%d\n", inet_ntop(AF_INET, &peerAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(peerAddr.sin_port));
 		socketIdx++;
+        for (i = 0; i < IMAGE_LEN_MESSAGE_LEN; i += bytes) {
+            if ((bytes = recv(clientsock[socketIdx-1], sockdata + i, IMAGE_LEN_MESSAGE_LEN - i, 0)) <= 0) {
+                quit("recv failed", bytes);
+            }
+        } 
+        handshake = (hndshkMess*) sockdata;
+        if (strncmp("SEND",handshake->msg, 3) == 0)
+        {
+            picH = ntohl(handshake->height);
+            picW = ntohl(handshake->width);
+            fprintf(stdout, "H:%d, W:%d\n", picH,picW);
+        }
     }
+    
+    /* create image */
+	imgShow = cvCreateImageHeader(cvSize(picW, picH), IPL_DEPTH_8U, 3);
+	cvCreateData(imgShow);
+	cvZero(imgShow);
+
+	imgSend = cvCreateImageHeader(cvSize(picW, picH), IPL_DEPTH_8U, 3);
+	cvCreateData(imgSend);
+	cvZero(imgSend);
 
     return 0;
 }

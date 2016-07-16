@@ -4,4 +4,4 @@
 obj/
 eyes
 *.weights
-checkFileChange.py
+data/

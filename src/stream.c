@@ -4,21 +4,19 @@
 #include "utils.h"
 #include "parser.h"
 #include "box.h"
-#include "vocDefine.h"
+#include "stream_demo.h"
+#include "classDefine.h"
 
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 #endif
 
-//char *voc_names[] = {"person","bicycle","car","motorcycle","airplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","couch","potted plant","bed","dining table","toilet","tv","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
-char *voc_names[] = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor", "Song Yu"};
-
-image voc_labels[VOC_LABLE_SIZE];
+image class_labels[CLASS_LABLE_SIZE];
 
 void train_stream(char *cfgfile, char *weightfile)
 {
-    char *train_images = "/home/yu/workspace/Data/vocData/train.txt";
-    char *backup_directory = "/home/yu/workspace/Data/vocData/weightBackup/";
+    char *train_images = "data/vocData/train.txt";
+    char *backup_directory = "data/vocData/backup/";
     srand(time(0));
     data_seed = time(0);
     char *base = basecfg(cfgfile);
@@ -146,9 +144,7 @@ void validate_stream(char *cfgfile, char *weightfile)
     srand(time(0));
 
     char *base = "results/comp4_det_test_";
-    //list *plist = get_paths("data/voc.2007.test");
-    list *plist = get_paths("/home/pjreddie/data/voc/2007_test.txt");
-    //list *plist = get_paths("data/voc.2012.test");
+    list *plist = get_paths("data/vocData/2012_val.txt");
     char **paths = (char **)list_to_array(plist);
 
     layer l = net.layers[net.n-1];
@@ -160,7 +156,7 @@ void validate_stream(char *cfgfile, char *weightfile)
     FILE **fps = calloc(classes, sizeof(FILE *));
     for(j = 0; j < classes; ++j){
         char buff[1024];
-        snprintf(buff, 1024, "%s%s.txt", base, voc_names[j]);
+        snprintf(buff, 1024, "%s%s.txt", base, class_names[j]);
         fps[j] = fopen(buff, "w");
     }
     box *boxes = calloc(side*side*l.n, sizeof(box));
@@ -248,7 +244,7 @@ void validate_stream_recall(char *cfgfile, char *weightfile)
     FILE **fps = calloc(classes, sizeof(FILE *));
     for(j = 0; j < classes; ++j){
         char buff[1024];
-        snprintf(buff, 1024, "%s%s.txt", base, voc_names[j]);
+        snprintf(buff, 1024, "%s%s.txt", base, class_names[j]);
         fps[j] = fopen(buff, "w");
     }
     box *boxes = calloc(side*side*l.n, sizeof(box));
@@ -347,7 +343,7 @@ void test_stream(char *cfgfile, char *weightfile, char *filename, float thresh)
         printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
         convert_stream_detections(predictions, l.classes, l.n, l.sqrt, l.side, 1, 1, thresh, probs, boxes, 0);
         if (nms) do_nms_sort(boxes, probs, l.side*l.side*l.n, l.classes, nms);
-        draw_detections(im, l.side*l.side*l.n, thresh, boxes, probs, voc_names, voc_labels, VOC_LABLE_SIZE);
+        draw_detections(im, l.side*l.side*l.n, thresh, boxes, probs, class_names, class_labels, CLASS_LABLE_SIZE);
         show_image(im, "predictions");
         save_image(im, "predictions");
 
@@ -362,19 +358,18 @@ void test_stream(char *cfgfile, char *weightfile, char *filename, float thresh)
     }
 }
 
-void demo_stream(char *cfgfile, char *weightfile, float thresh, int cam_index, char *filename);
-
 void run_stream(int argc, char **argv)
 {
     int i;
-    for(i = 0; i < VOC_LABLE_SIZE; ++i){
+    for(i = 0; i < CLASS_LABLE_SIZE; ++i){
         char buff[256];
-        sprintf(buff, "data/labels/%s.png", voc_names[i]);
-        voc_labels[i] = load_image_color(buff, 0, 0);
+        sprintf(buff, "labels/%s.png", class_names[i]);
+        class_labels[i] = load_image_color(buff, 0, 0);
     }
 
     float thresh = find_float_arg(argc, argv, "-thresh", .2);
     int cam_index = find_int_arg(argc, argv, "-c", 0);
+    int frame_skip = find_int_arg(argc, argv, "-s", 0);
     if(argc < 4){
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
@@ -387,5 +382,5 @@ void run_stream(int argc, char **argv)
     else if(0==strcmp(argv[2], "train")) train_stream(cfg, weights);
     else if(0==strcmp(argv[2], "valid")) validate_stream(cfg, weights);
     else if(0==strcmp(argv[2], "recall")) validate_stream_recall(cfg, weights);
-    else if(0==strcmp(argv[2], "demo")) demo_stream(cfg, weights, thresh, cam_index, filename);
+    else if(0==strcmp(argv[2], "demo")) demo_stream(cfg, weights, thresh, cam_index, filename, class_names, class_labels, CLASS_LABLE_SIZE, frame_skip);
 }
