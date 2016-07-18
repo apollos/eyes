@@ -15,8 +15,8 @@ image class_labels[CLASS_LABLE_SIZE];
 
 void train_stream(char *cfgfile, char *weightfile)
 {
-    char *train_images = "data/vocData/train.txt";
-    char *backup_directory = "data/vocData/backup/";
+    char *train_images = "data/signTrain/training_list.txt";
+    char *backup_directory = "data/signTrain/backup";
     srand(time(0));
     data_seed = time(0);
     char *base = basecfg(cfgfile);
