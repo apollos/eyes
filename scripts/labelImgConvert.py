@@ -4,9 +4,9 @@ from PIL import Image
 import re
 import xml.etree.ElementTree as ET
 
-sets=['songyu'] #['stopsign', 'stopsign', 'yieldsign'] 
+sets=['person'] #['stopsign', 'stopsign', 'yieldsign'] 
 
-classes = ["stop sign", "yield sign", "song yu"]
+classes = ["stop sign", "yield sign", "person"]
 
 
 def convert(size, box):

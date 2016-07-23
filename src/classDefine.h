@@ -7,5 +7,5 @@ static char *class_names[] = {"aeroplane", "bicycle", "bird", "boat", "bottle", 
 */
 
 #define CLASS_LABLE_SIZE 3
-static char *class_names[] = {"stop sign", "yield sign", "song yu"};
+static char *class_names[] = {"stop sign", "yield sign", "person"};
 #endif
