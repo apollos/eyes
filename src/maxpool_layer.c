@@ -18,17 +18,17 @@ image get_maxpool_delta(maxpool_layer l)
     return float_to_image(w,h,c,l.delta);
 }
 
-maxpool_layer make_maxpool_layer(int batch, int h, int w, int c, int size, int stride)
+maxpool_layer make_maxpool_layer(int batch, int h, int w, int c, int size, int stride, int padding)
 {
-    fprintf(stderr, "Maxpool Layer: %d x %d x %d image, %d size, %d stride\n", h,w,c,size,stride);
     maxpool_layer l = {0};
     l.type = MAXPOOL;
     l.batch = batch;
     l.h = h;
     l.w = w;
     l.c = c;
-    l.out_w = (w-1)/stride + 1;
-    l.out_h = (h-1)/stride + 1;
+    l.pad = padding;
+    l.out_w = (w + 2*padding)/stride;
+    l.out_h = (h + 2*padding)/stride;
     l.out_c = c;
     l.outputs = l.out_h * l.out_w * l.out_c;
     l.inputs = h*w*c;
@@ -38,23 +38,27 @@ maxpool_layer make_maxpool_layer(int batch, int h, int w, int c, int size, int s
     l.indexes = calloc(output_size, sizeof(int));
     l.output =  calloc(output_size, sizeof(float));
     l.delta =   calloc(output_size, sizeof(float));
+    l.forward = forward_maxpool_layer;
+    l.backward = backward_maxpool_layer;
     #ifdef GPU
+    l.forward_gpu = forward_maxpool_layer_gpu;
+    l.backward_gpu = backward_maxpool_layer_gpu;
     l.indexes_gpu = cuda_make_int_array(output_size);
     l.output_gpu  = cuda_make_array(l.output, output_size);
     l.delta_gpu   = cuda_make_array(l.delta, output_size);
     #endif
+    fprintf(stderr, "max          %d x %d / %d  %4d x%4d x%4d   ->  %4d x%4d x%4d\n", size, size, stride, w, h, c, l.out_w, l.out_h, l.out_c);
     return l;
 }
 
 void resize_maxpool_layer(maxpool_layer *l, int w, int h)
 {
-    int stride = l->stride;
     l->h = h;
     l->w = w;
     l->inputs = h*w*l->c;
 
-    l->out_w = (w-1)/stride + 1;
-    l->out_h = (h-1)/stride + 1;
+    l->out_w = (w + 2*l->pad)/l->stride;
+    l->out_h = (h + 2*l->pad)/l->stride;
     l->outputs = l->out_w * l->out_h * l->c;
     int output_size = l->outputs * l->batch;
 
@@ -75,11 +79,11 @@ void resize_maxpool_layer(maxpool_layer *l, int w, int h)
 void forward_maxpool_layer(const maxpool_layer l, network_state state)
 {
     int b,i,j,k,m,n;
-    int w_offset = (-l.size-1)/2 + 1;
-    int h_offset = (-l.size-1)/2 + 1;
+    int w_offset = -l.pad;
+    int h_offset = -l.pad;
 
-    int h = (l.h-1)/l.stride + 1;
-    int w = (l.w-1)/l.stride + 1;
+    int h = l.out_h;
+    int w = l.out_w;
     int c = l.c;
 
     for(b = 0; b < l.batch; ++b){
@@ -112,8 +116,8 @@ void forward_maxpool_layer(const maxpool_layer l, network_state state)
 void backward_maxpool_layer(const maxpool_layer l, network_state state)
 {
     int i;
-    int h = (l.h-1)/l.stride + 1;
-    int w = (l.w-1)/l.stride + 1;
+    int h = l.out_h;
+    int w = l.out_w;
     int c = l.c;
     for(i = 0; i < h*w*c*l.batch; ++i){
         int index = l.indexes[i];

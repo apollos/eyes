@@ -1,0 +1,7 @@
+classes= 80
+train  = /home/pjreddie/data/coco/trainvalno5k.txt
+valid = data/coco_val_5k.list
+names = data/80class.name
+backup = /home/pjreddie/backup/
+eval=coco
+
