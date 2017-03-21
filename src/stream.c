@@ -10,12 +10,10 @@
 #include <sys/time.h>
 #include "zmq.h"
 
-#define FRAMES 3
-
 #ifdef OPENCV
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/imgproc/imgproc_c.h"
-image get_image_from_stream(CvCapture *cap);
+image get_image_from_raw_data(IplImage* src);
 
 static char **demo_names;
 static image **demo_alphabet;
@@ -25,56 +23,48 @@ static float **probs;
 static box *boxes;
 static network net;
 static image in   ;
-static image in_s ;
 static image det  ;
-static image det_s;
-static image disp = {0};
-static CvCapture * cap;
 static float demo_thresh = 0;
 static float demo_hier_thresh = .5;
 
-static float *predictions[FRAMES];
-static int demo_index = 0;
-static image images[FRAMES];
-static float *avg;
-
-void *fetch_data_zmq(void *dealer)
+image get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int data_len)
 {
-	zmq_msg_t message;
-	zmq_msg_init (&message);
-	zmq_msg_recv (&message, dealer,0);//, ZMQ_NOBLOCK);
-
-	//  Process the message frame
-
-	int size = zmq_msg_size(&message);
-	char *string = malloc(size + 1);
-	memcpy(string, zmq_msg_data(&message), size);
-	int nextFrame = 0;
-	zmq_msg_close (&message);
-	printf("Raw data len %d ", size);
-	string[size] = 0;
-
-
-	/*image im = ipl_to_image(src);
-	rgbgr_image(im);
-
-    in_s = resize_image(im, net.w, net.h);*/
-    return 0;
+	CvMat tmpMat;
+	memcpy(imgShow->imageData, raw_data, data_len);
+	imgShow->imageSize= data_len;
+	CvMat *tmpMatptr = cvGetMat( imgShow, &tmpMat, NULL, 0 );
+	imgShow = cvDecodeImage(tmpMatptr, CV_LOAD_IMAGE_COLOR);
+	in = get_image_from_raw_data(imgShow);
+	return in;
 }
 
-void *detect_data_zmq(void *ptr)
+image fetch_data_zmq(void *dealer, IplImage* imgShow)
 {
-    float nms = .4;
+	int more = 0;
+	unsigned char rcv_buf[1024*768*3];
+	int len = 0;
+	size_t opt_size = sizeof (len);
+	unsigned char* raw_data_pos = NULL;
+
+	do{
+		int rc = zmq_recv (dealer, rcv_buf+len, sizeof(rcv_buf) - len,0);//, ZMQ_NOBLOCK);
+		assert (rc != -1);
+		if (more == 0){ //first come, it is identity
+			raw_data_pos = rcv_buf+len+rc;
+		}
+		len += rc;
+		rc = zmq_getsockopt (dealer, ZMQ_RCVMORE, &more, &opt_size);
+		assert (rc == 0);
+
+	}while(more);
+	return get_Iplimage_from_raw_data(imgShow, raw_data_pos, len - (raw_data_pos - rcv_buf));
+}
+
+image detect_data_zmq(image in)
+{
 
     layer l = net.layers[net.n-1];
-    float *X = det_s.data;
-    float *prediction = network_predict(net, X);
 
-    memcpy(predictions[demo_index], prediction, l.outputs*sizeof(float));
-    mean_arrays(predictions, FRAMES, l.outputs, avg);
-    l.output = avg;
-
-    free_image(det_s);
     if(l.type == DETECTION){
         get_detection_boxes(l, 1, 1, demo_thresh, probs, boxes, 0);
     } else if (l.type == REGION){
@@ -82,18 +72,10 @@ void *detect_data_zmq(void *ptr)
     } else {
         error("Last layer must produce detections\n");
     }
-    if (nms > 0) do_nms(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-    printf("\033[2J");
-    printf("\033[1;1H");
-    printf("Objects:\n\n");
-
-    images[demo_index] = det;
-    det = images[(demo_index + FRAMES/2 + 1)%FRAMES];
-    demo_index = (demo_index + 1)%FRAMES;
 
     draw_detections(det, l.w*l.h*l.n, demo_thresh, boxes, probs, demo_names, demo_alphabet, demo_classes);
 
-    return 0;
+    return det;
 }
 
 void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, const int port, char **names, int classes, float hier_thresh, float thresh)
@@ -128,44 +110,35 @@ void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, co
     layer l = net.layers[net.n-1];
     int j;
 
-    avg = (float *) calloc(l.outputs, sizeof(float));
-    for(j = 0; j < FRAMES; ++j) predictions[j] = (float *) calloc(l.outputs, sizeof(float));
-    for(j = 0; j < FRAMES; ++j) images[j] = make_image(1,1,3);
-
     boxes = (box *)calloc(l.w*l.h*l.n, sizeof(box));
     probs = (float **)calloc(l.w*l.h*l.n, sizeof(float *));
     for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = (float *)calloc(l.classes, sizeof(float));
-
-    det = in;
-    det_s = in_s;
-
-
-    disp = det;
 
     int count = 0;
     cvNamedWindow("Stream", CV_WINDOW_NORMAL);
 	cvMoveWindow("Stream", 0, 0);
 	cvResizeWindow("Stream", 1352, 1013);
+	int picH=480;
+	int picW=640;
+	IplImage* imgShow = cvCreateImageHeader(cvSize(picW, picH), IPL_DEPTH_8U, 3);
+	cvCreateData(imgShow);
+	cvZero(imgShow);
 
     while(1){
         ++count;
         if(1){
-        	fetch_data_zmq(dealer);
-        	//detect_in_thread(0);
+        	fetch_data_zmq(dealer,imgShow);
+        	detect_data_zmq(in);
 
-            //show_image(disp, "Stream");
-            //int c = cvWaitKey(1);
-            //if (c == 'q')
-            //	break;
+            show_image(det, "Stream");
+            int c = cvWaitKey(1);
+            if (c == 'q')
+            	break;
 
-            //free_image(disp);
-            disp  = det;
-
-            det   = in;
-            det_s = in_s;
+            free_image(in);
+            free_image(det);
         }
     }
-    //zctx_destroy (&ctx);
 }
 #else
 void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, const int port, char **names, int classes, float hier_thresh, float thresh)

@@ -556,8 +556,8 @@ void run_detector(int argc, char **argv)
     	char *name_list = option_find_str(options, "names", "data/names.list");
     	char **names = get_labels(name_list);
     	gpu_index = find_int_arg(argc, argv, "-i", 0);
-    	char ip_addr[]="192.168.1.106";
-    	int port = 5571;
+    	char *ip_addr = find_char_arg(argc, argv, "-addr", "127.0.0.1");
+    	int port = find_int_arg(argc, argv, "-port", 5571);
     	stream(gpu_index, cfg, weights, ip_addr, port, names, classes, hier_thresh, thresh);
     }
 }

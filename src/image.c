@@ -507,7 +507,13 @@ image get_image_from_stream(CvCapture *cap)
     rgbgr_image(im);
     return im;
 }
-
+image get_image_from_raw_data(IplImage* src)
+{
+	if (!src) return make_empty_image(0,0,0);
+	image im = ipl_to_image(src);
+	rgbgr_image(im);
+	return im;
+}
 void save_image_jpg(image p, const char *name)
 {
     image copy = copy_image(p);
