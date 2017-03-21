@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "box.h"
 #include "demo.h"
+#include "stream.h"
 #include "option_list.h"
 
 #ifdef OPENCV
@@ -441,6 +442,7 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh)
 {
+	int show_flag = 1;
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
@@ -482,7 +484,7 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         get_region_boxes(l, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh);
         if (l.softmax_tree && nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
+        draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes, show_flag);
         save_image(im, "predictions");
         show_image(im, "predictions");
 
@@ -514,6 +516,7 @@ void run_detector(int argc, char **argv)
     int *gpus = 0;
     int gpu = 0;
     int ngpus = 0;
+
     if(gpu_list){
         printf("%s\n", gpu_list);
         int len = strlen(gpu_list);
@@ -558,6 +561,7 @@ void run_detector(int argc, char **argv)
     	gpu_index = find_int_arg(argc, argv, "-i", 0);
     	char *ip_addr = find_char_arg(argc, argv, "-addr", "127.0.0.1");
     	int port = find_int_arg(argc, argv, "-port", 5571);
+
     	stream(gpu_index, cfg, weights, ip_addr, port, names, classes, hier_thresh, thresh);
     }
 }

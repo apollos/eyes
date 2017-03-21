@@ -23,11 +23,12 @@ static float **probs;
 static box *boxes;
 static network net;
 static image in   ;
+static image in_s ;
 static image det  ;
-static float demo_thresh = 0;
+static float demo_thresh = .24;
 static float demo_hier_thresh = .5;
 
-image get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int data_len)
+void get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int data_len)
 {
 	CvMat tmpMat;
 	memcpy(imgShow->imageData, raw_data, data_len);
@@ -35,13 +36,16 @@ image get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int
 	CvMat *tmpMatptr = cvGetMat( imgShow, &tmpMat, NULL, 0 );
 	imgShow = cvDecodeImage(tmpMatptr, CV_LOAD_IMAGE_COLOR);
 	in = get_image_from_raw_data(imgShow);
-	return in;
+	in_s = resize_image(in, net.w, net.h);
+	cvReleaseMat(&tmpMatptr);
+	cvReleaseImage(&imgShow);
+	return;
 }
 
-image fetch_data_zmq(void *dealer, IplImage* imgShow)
+void fetch_data_zmq(void *dealer, IplImage* imgShow)
 {
 	int more = 0;
-	unsigned char rcv_buf[1024*768*3];
+	unsigned char rcv_buf[1024*768*3*3];
 	int len = 0;
 	size_t opt_size = sizeof (len);
 	unsigned char* raw_data_pos = NULL;
@@ -57,25 +61,31 @@ image fetch_data_zmq(void *dealer, IplImage* imgShow)
 		assert (rc == 0);
 
 	}while(more);
-	return get_Iplimage_from_raw_data(imgShow, raw_data_pos, len - (raw_data_pos - rcv_buf));
+	get_Iplimage_from_raw_data(imgShow, raw_data_pos, len - (raw_data_pos - rcv_buf));
+	return;
 }
 
-image detect_data_zmq(image in)
+void detect_data_zmq(image im)
 {
-
+    float nms=.4;
     layer l = net.layers[net.n-1];
+	float *X = im.data;
+	network_predict(net, X);
+	int show_flag = 0;
 
-    if(l.type == DETECTION){
-        get_detection_boxes(l, 1, 1, demo_thresh, probs, boxes, 0);
-    } else if (l.type == REGION){
-        get_region_boxes(l, 1, 1, demo_thresh, probs, boxes, 0, 0, demo_hier_thresh);
-    } else {
-        error("Last layer must produce detections\n");
-    }
+	if(l.type == DETECTION){
+		get_detection_boxes(l, 1, 1, demo_thresh, probs, boxes, 0);
+	} else if (l.type == REGION){
+		get_region_boxes(l, 1, 1, demo_thresh, probs, boxes, 0, 0, demo_hier_thresh);
+	} else {
+		error("Last layer must produce detections\n");
+	}
+	if (l.softmax_tree && nms)
+		do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+	else if(nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
 
-    draw_detections(det, l.w*l.h*l.n, demo_thresh, boxes, probs, demo_names, demo_alphabet, demo_classes);
-
-    return det;
+	draw_detections(im, l.w*l.h*l.n, 0.24, boxes, probs, demo_names, demo_alphabet, l.classes, show_flag);
+	return ;
 }
 
 void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, const int port, char **names, int classes, float hier_thresh, float thresh)
@@ -93,7 +103,6 @@ void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, co
         load_weights(&net, weightfile);
     }
     set_batch_network(&net, 1);
-
     srand(2222222);
 
     void *ctx   = zmq_ctx_new();
@@ -128,17 +137,23 @@ void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, co
         ++count;
         if(1){
         	fetch_data_zmq(dealer,imgShow);
-        	detect_data_zmq(in);
-
-            show_image(det, "Stream");
+        	//det = in_s;
+        	detect_data_zmq(in_s);
+            show_image(in_s, "Stream");
             int c = cvWaitKey(1);
             if (c == 'q')
+            {
+            	free_image(in);
             	break;
-
+            }
             free_image(in);
-            free_image(det);
+            free_image(in_s);
+            //free_image(disp);
         }
     }
+    free(boxes);
+	free_ptrs((void **)probs, l.w*l.h*l.n);
+	cvReleaseImage(&imgShow);
 }
 #else
 void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, const int port, char **names, int classes, float hier_thresh, float thresh)

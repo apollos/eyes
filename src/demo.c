@@ -51,6 +51,7 @@ void *fetch_in_thread(void *ptr)
 void *detect_in_thread(void *ptr)
 {
     float nms = .4;
+    int show_flag = 1;
 
     layer l = net.layers[net.n-1];
     float *X = det_s.data;
@@ -78,7 +79,7 @@ void *detect_in_thread(void *ptr)
     det = images[(demo_index + FRAMES/2 + 1)%FRAMES];
     demo_index = (demo_index + 1)%FRAMES;
 
-    draw_detections(det, l.w*l.h*l.n, demo_thresh, boxes, probs, demo_names, demo_alphabet, demo_classes);
+    draw_detections(det, l.w*l.h*l.n, demo_thresh, boxes, probs, demo_names, demo_alphabet, demo_classes, show_flag);
 
     return 0;
 }
