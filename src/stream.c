@@ -24,9 +24,11 @@ static box *boxes;
 static network net;
 static image in   ;
 static image in_s ;
-static image det  ;
+
 static float demo_thresh = .24;
 static float demo_hier_thresh = .5;
+static unsigned char rcv_buf[1024*768*3*3];
+static int zmq_addr_len;
 
 void get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int data_len)
 {
@@ -45,16 +47,17 @@ void get_Iplimage_from_raw_data(IplImage* imgShow, unsigned char* raw_data, int 
 void fetch_data_zmq(void *dealer, IplImage* imgShow)
 {
 	int more = 0;
-	unsigned char rcv_buf[1024*768*3*3];
+
 	int len = 0;
 	size_t opt_size = sizeof (len);
 	unsigned char* raw_data_pos = NULL;
-
+	zmq_addr_len = 0;
 	do{
 		int rc = zmq_recv (dealer, rcv_buf+len, sizeof(rcv_buf) - len,0);//, ZMQ_NOBLOCK);
 		assert (rc != -1);
 		if (more == 0){ //first come, it is identity
 			raw_data_pos = rcv_buf+len+rc;
+			zmq_addr_len = rc;
 		}
 		len += rc;
 		rc = zmq_getsockopt (dealer, ZMQ_RCVMORE, &more, &opt_size);
@@ -88,6 +91,30 @@ void detect_data_zmq(image im)
 	return ;
 }
 
+void push_data_zmq(void *dealer, image im)
+{
+	char zmq_addr [100];
+	/*'Stream-in-%d'*/
+	char zmq_prefix[] = "Stream-in-";
+	memcpy(zmq_addr, rcv_buf+sizeof(zmq_prefix)-1, zmq_addr_len - (sizeof(zmq_prefix)-1));
+	zmq_addr[zmq_addr_len - (sizeof(zmq_prefix)-1)] = '\0';
+	int client_id = atoi(zmq_addr);
+	int encode_param[3];
+	encode_param[0] = CV_IMWRITE_JPEG_QUALITY;
+	encode_param[1] = 85;
+	encode_param[2] = 0;
+	IplImage* iplImage = get_image_cv(im);
+	CvMat* im_s = cvEncodeImage(".jpg", iplImage, encode_param);
+
+	snprintf (zmq_addr, sizeof(zmq_addr), "Stream-out-%d", client_id);
+	int rc = zmq_send(dealer, zmq_addr, strlen(zmq_addr), ZMQ_SNDMORE);
+	assert (rc > 0);
+
+	rc = zmq_send(dealer, im_s->data.ptr, im_s->step, ZMQ_NOBLOCK);
+	assert (rc > 0);
+	cvReleaseImage(&iplImage);
+	cvReleaseMat(&im_s);
+}
 void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, const int port, char **names, int classes, float hier_thresh, float thresh)
 {
     //skip = frame_skip;
@@ -139,13 +166,14 @@ void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, co
         	fetch_data_zmq(dealer,imgShow);
         	//det = in_s;
         	detect_data_zmq(in_s);
-            show_image(in_s, "Stream");
+        	push_data_zmq(dealer, in_s);
+            /*show_image(in_s, "Stream");
             int c = cvWaitKey(1);
             if (c == 'q')
             {
             	free_image(in);
             	break;
-            }
+            }*/
             free_image(in);
             free_image(in_s);
             //free_image(disp);

@@ -10,11 +10,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#ifdef OPENCV
-#include "opencv2/highgui/highgui_c.h"
-#include "opencv2/imgproc/imgproc_c.h"
-#endif
-
 
 int windows = 0;
 
@@ -438,6 +433,28 @@ void show_image_cv(image p, const char *name)
     }
     cvShowImage(buff, disp);
     cvReleaseImage(&disp);
+}
+
+IplImage * get_image_cv(image p)
+{
+    int x,y,k;
+    image copy = copy_image(p);
+    constrain_image(copy);
+    if(p.c == 3) rgbgr_image(copy);
+    //normalize_image(copy);
+
+    IplImage *disp = cvCreateImage(cvSize(p.w,p.h), IPL_DEPTH_8U, p.c);
+    int step = disp->widthStep;
+
+    for(y = 0; y < p.h; ++y){
+        for(x = 0; x < p.w; ++x){
+            for(k= 0; k < p.c; ++k){
+                disp->imageData[y*step + x*p.c + k] = (unsigned char)(get_pixel(copy,x,y,k)*255);
+            }
+        }
+    }
+    free_image(copy);
+    return disp;
 }
 #endif
 
