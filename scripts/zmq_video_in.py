@@ -81,8 +81,11 @@ class VideoCapture():
             print ("ctrl+c received, quit")
             return None 
         dim = (self.w, self.h)
-        img = cv2.resize(img, dim, interpolation = cv2.INTER_CUBIC)
-        result, imgencode = cv2.imencode('.jpg', img, self.encode_param)
+        try:
+            img = cv2.resize(img, dim, interpolation = cv2.INTER_CUBIC)
+            result, imgencode = cv2.imencode('.jpg', img, self.encode_param)
+        except BaseException:
+            return None
         data = np.array(imgencode)
         #stringData = data.tostring()
         return data
@@ -129,7 +132,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-t', "--broker_ip", action="store", help="Specify the broker IP, default is localhost", default="localhost", dest="broker_ip")
     parser.add_argument('-p', "--broker_port", action="store", help="Specify the broker Port, default is 5570", default=5570, type=int, dest="broker_port")
-    parser.add_argument('-c', "--cam_id", action="store", help="Specify the local camera idx", default=0, type=int, dest="cam_idx")
+    parser.add_argument('-c', "--cam_id", action="store", help="Specify the local camera idx", default="0", dest="cam_idx")
     parser.add_argument('-l', "--video_location", action="store", help="Specify the input video full path", dest="video_path")
     parser.add_argument('-i', "--client_id", action="store", help="Specify the client id and it shall be pair with stream in", required=True, type=int, dest="client_id")
     results = parser.parse_args()
