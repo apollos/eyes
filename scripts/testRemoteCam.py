@@ -29,8 +29,14 @@ if __name__ == "__main__":
     else:
         CAMIDX = 0
         capture = cv2.VideoCapture(CAMIDX)  
+<<<<<<< HEAD
         capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 640*0.8)  
         capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 480*0.8)
+=======
+        capture.set(cv.CV_CAP_PROP_FPS, 30);
+        capture.set(cv.CV_CAP_PROP_FRAME_WIDTH, 1024)  
+        capture.set(cv.CV_CAP_PROP_FRAME_HEIGHT, 768) 
+>>>>>>> devbranch
     if not capture.isOpened():
         print("Can not open Cam!")
         exit(-1)

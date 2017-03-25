@@ -4,5 +4,7 @@
 obj/
 eyes
 *.weights
-data/
 bad.list
+.project
+.settings/
+predictions.jpg

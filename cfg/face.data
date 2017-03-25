@@ -1,0 +1,6 @@
+classes= 2
+train  = /home/yu/workspace/Data/face/trainval.txt
+valid  = /home/yu/workspace/Data/face/test.txt
+names = data/face.name
+backup = /home/yu/workspace/Data/weights/darknet/tmp
+

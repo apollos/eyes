@@ -31,7 +31,7 @@ char *get_cost_string(COST_TYPE a)
 
 cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float scale)
 {
-    fprintf(stderr, "Cost Layer: %d inputs\n", inputs);
+    fprintf(stderr, "cost                                           %4d\n",  inputs);
     cost_layer l = {0};
     l.type = COST;
 
@@ -43,7 +43,13 @@ cost_layer make_cost_layer(int batch, int inputs, COST_TYPE cost_type, float sca
     l.delta = calloc(inputs*batch, sizeof(float));
     l.output = calloc(inputs*batch, sizeof(float));
     l.cost = calloc(1, sizeof(float));
+
+    l.forward = forward_cost_layer;
+    l.backward = backward_cost_layer;
     #ifdef GPU
+    l.forward_gpu = forward_cost_layer_gpu;
+    l.backward_gpu = backward_cost_layer_gpu;
+
     l.delta_gpu = cuda_make_array(l.output, inputs*batch);
     l.output_gpu = cuda_make_array(l.delta, inputs*batch);
     #endif
@@ -98,6 +104,15 @@ void push_cost_layer(cost_layer l)
     cuda_push_array(l.delta_gpu, l.delta, l.batch*l.inputs);
 }
 
+int float_abs_compare (const void * a, const void * b)
+{
+    float fa = *(const float*) a;
+    if(fa < 0) fa = -fa;
+    float fb = *(const float*) b;
+    if(fb < 0) fb = -fb;
+    return (fa > fb) - (fa < fb);
+}
+
 void forward_cost_layer_gpu(cost_layer l, network_state state)
 {
     if (!state.truth) return;
@@ -109,6 +124,16 @@ void forward_cost_layer_gpu(cost_layer l, network_state state)
         smooth_l1_gpu(l.batch*l.inputs, state.input, state.truth, l.delta_gpu, l.output_gpu);
     } else {
         l2_gpu(l.batch*l.inputs, state.input, state.truth, l.delta_gpu, l.output_gpu);
+    }
+
+    if(l.ratio){
+        cuda_pull_array(l.delta_gpu, l.delta, l.batch*l.inputs);
+        qsort(l.delta, l.batch*l.inputs, sizeof(float), float_abs_compare);
+        int n = (1-l.ratio) * l.batch*l.inputs;
+        float thresh = l.delta[n];
+        thresh = 0;
+        printf("%f\n", thresh);
+        supp_ongpu(l.batch*l.inputs, thresh, l.delta_gpu, 1);
     }
 
     cuda_pull_array(l.output_gpu, l.output, l.batch*l.inputs);

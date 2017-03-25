@@ -1,0 +1,6 @@
+classes= 20
+train  = /home/yu/workspace/Data/vocData/train.txt
+valid  = /home/yu/workspace/Data/vocData/2007_test.txt
+names = data/20class.name
+backup = /home/yu/workspace/Data/weights/darknet/tmp
+

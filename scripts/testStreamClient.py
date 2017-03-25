@@ -6,7 +6,6 @@ import numpy as np
 import struct
 
 
-
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python testStreamClient.py <target ip> <port>")

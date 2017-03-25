@@ -36,6 +36,10 @@ connected_layer make_connected_layer(int batch, int inputs, int outputs, ACTIVAT
     l.weights = calloc(outputs*inputs, sizeof(float));
     l.biases = calloc(outputs, sizeof(float));
 
+    l.forward = forward_connected_layer;
+    l.backward = backward_connected_layer;
+    l.update = update_connected_layer;
+
     //float scale = 1./sqrt(inputs);
     float scale = sqrt(2./inputs);
     for(i = 0; i < outputs*inputs; ++i){
@@ -66,6 +70,10 @@ connected_layer make_connected_layer(int batch, int inputs, int outputs, ACTIVAT
     }
 
 #ifdef GPU
+    l.forward_gpu = forward_connected_layer_gpu;
+    l.backward_gpu = backward_connected_layer_gpu;
+    l.update_gpu = update_connected_layer_gpu;
+
     l.weights_gpu = cuda_make_array(l.weights, outputs*inputs);
     l.biases_gpu = cuda_make_array(l.biases, outputs);
 
@@ -92,7 +100,7 @@ connected_layer make_connected_layer(int batch, int inputs, int outputs, ACTIVAT
     }
 #endif
     l.activation = activation;
-    fprintf(stderr, "Connected Layer: %d inputs, %d outputs\n", inputs, outputs);
+    fprintf(stderr, "connected                            %4d  ->  %4d\n", inputs, outputs);
     return l;
 }
 
@@ -187,12 +195,34 @@ void denormalize_connected_layer(layer l)
 {
     int i, j;
     for(i = 0; i < l.outputs; ++i){
-        float scale = l.scales[i]/sqrt(l.rolling_variance[i] + .00001);
+        float scale = l.scales[i]/sqrt(l.rolling_variance[i] + .000001);
         for(j = 0; j < l.inputs; ++j){
             l.weights[i*l.inputs + j] *= scale;
         }
         l.biases[i] -= l.rolling_mean[i] * scale;
+        l.scales[i] = 1;
+        l.rolling_mean[i] = 0;
+        l.rolling_variance[i] = 1;
     }
+}
+
+
+void statistics_connected_layer(layer l)
+{
+    if(l.batch_normalize){
+        printf("Scales ");
+        print_statistics(l.scales, l.outputs);
+        /*
+        printf("Rolling Mean ");
+        print_statistics(l.rolling_mean, l.outputs);
+        printf("Rolling Variance ");
+        print_statistics(l.rolling_variance, l.outputs);
+        */
+    }
+    printf("Biases ");
+    print_statistics(l.biases, l.outputs);
+    printf("Weights ");
+    print_statistics(l.weights, l.outputs);
 }
 
 #ifdef GPU
@@ -257,13 +287,12 @@ void forward_connected_layer_gpu(connected_layer l, network_state state)
         axpy_ongpu(l.outputs, 1, l.biases_gpu, 1, l.output_gpu + i*l.outputs, 1);
     }
     activate_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation);
-
 }
 
 void backward_connected_layer_gpu(connected_layer l, network_state state)
 {
     int i;
-    constrain_ongpu(l.outputs*l.batch, 5, l.delta_gpu, 1);
+    constrain_ongpu(l.outputs*l.batch, 1, l.delta_gpu, 1);
     gradient_array_ongpu(l.output_gpu, l.outputs*l.batch, l.activation, l.delta_gpu);
     for(i = 0; i < l.batch; ++i){
         axpy_ongpu(l.outputs, 1, l.delta_gpu + i*l.outputs, 1, l.bias_updates_gpu, 1);
