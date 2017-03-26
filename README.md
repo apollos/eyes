@@ -31,9 +31,12 @@ Note: You can also disable OpenCV, CUDNN and CUDA in make file according to your
    
 2. Remote mode   
    a) Start zmq Broker: script/zmq_broker.py
+   
    b) Start eyes: eyes detector stream \<your cfg data\> \<your cfg file\>  \<your weight\> 
+   
    c) Start zmq video in: script/zmq_video_in.py -t broker_ip -p port -i client_id
                           You can also use -l to specify the video path or remote IP Cam: http://ip:port/video?dummy=param.mjpg    
+                          
    d) Start zmq video reciver: script/zmq_video_out.py -t broker_ip -p port -i client_id
      
 #Demo weight    
