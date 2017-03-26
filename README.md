@@ -4,8 +4,8 @@
 #How to Build   
 Dependency:   
 1. OpenCV 2.x    
-2. CUDA 7.5     
-3. CUDNN 7.5   
+2. CUDA 7.5/8.0   
+3. CUDNN 5.1
    
 make all -jn       
    
@@ -26,15 +26,16 @@ Note: You can also disable OpenCV, CUDNN and CUDA in make file according to your
    
 #How to Run detection   
 1. Local mode      
-   a) For Image, eyes stream test  \<your cfg file\>  \<your weight\>  \<test image full path\>   
-   b) For Video, eyes stream demo  \<your cfg file\>  \<your weight\>   
+   a) For Image, eyes detector test  \<your cfg data\> \<your cfg file\>  \<your weight\>  \<test image full path\>   
+   b) For Video, eyes detector demo  \<your cfg data\> \<your cfg file\>  \<your weight\>   
    
 2. Remote mode   
    a) For Video:     
-      start server part by eyes stream demo  \<your cfg file\>  \<your weight\>  SOCKET:\<PORT\>     
-      start client detection result window by python scripts/testStreamClient.py  \<server IP\>  \<server port\>     
-      start client capture window by python scripts/testRemoteCam.py \<server IP>  \<server port\> [video to be play]      
-      Without the [video to be play], the capture part will open local camera as input source      
+      Start zmq Broker: script/zmq_broker.py
+      Start eyes: eyes detector stream \<your cfg data\> \<your cfg file\>  \<your weight\> 
+      Start zmq video in: script/zmq_video_in.py -t broker_ip -p port -i client_id
+                          You can also use -l to specify the video path or remote IP Cam: http://ip:port/video?dummy=param.mjpg 
+      Start zmq video reciver: script/zmq_video_out.py -t broker_ip -p port -i client_id
      
 #Demo weight    
 1. For training, you can use the initiated weight for your training http://pan.baidu.com/s/1mhKJ67u        
