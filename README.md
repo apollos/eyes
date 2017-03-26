@@ -30,12 +30,11 @@ Note: You can also disable OpenCV, CUDNN and CUDA in make file according to your
    b) For Video, eyes detector demo  \<your cfg data\> \<your cfg file\>  \<your weight\>   
    
 2. Remote mode   
-   a) For Video:     
-      Start zmq Broker: script/zmq_broker.py
-      Start eyes: eyes detector stream \<your cfg data\> \<your cfg file\>  \<your weight\> 
-      Start zmq video in: script/zmq_video_in.py -t broker_ip -p port -i client_id
-                          You can also use -l to specify the video path or remote IP Cam: http://ip:port/video?dummy=param.mjpg \n
-      Start zmq video reciver: script/zmq_video_out.py -t broker_ip -p port -i client_id
+   a) Start zmq Broker: script/zmq_broker.py
+   b) Start eyes: eyes detector stream \<your cfg data\> \<your cfg file\>  \<your weight\> 
+   c) Start zmq video in: script/zmq_video_in.py -t broker_ip -p port -i client_id
+                          You can also use -l to specify the video path or remote IP Cam: http://ip:port/video?dummy=param.mjpg    
+   d) Start zmq video reciver: script/zmq_video_out.py -t broker_ip -p port -i client_id
      
 #Demo weight    
 1. For training, you can use the initiated weight for your training http://pan.baidu.com/s/1mhKJ67u        
