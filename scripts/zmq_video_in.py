@@ -97,11 +97,16 @@ class VideoCapture():
 
     def setProperty(self):
         if(self.camIdx != -1):
+            print ("Open local cam %d" % (self.camIdx))
             self.camera = cv2.VideoCapture(self.camIdx)
         elif(self.videoPath):
-            if not os.path.exists(self.videoPath):
-                print("Can not open %s!" % videoPath)
-                return False
+            if ((self.videoPath.find("http") >= 0) or (self.videoPath.find("https") >= 0)):
+                print "Open remote IP cam %s" % (self.videoPath)
+            else:
+                if not os.path.exists(self.videoPath):
+                    print("Can not open %s!" % (self.videoPath))
+                    return False
+                print ("Open video %s" % (self.videoPath))
             self.camera = cv2.VideoCapture(self.videoPath)  
             self.frameCount = self.camera.get(cv.CV_CAP_PROP_FRAME_COUNT); 
             self.camera.set(cv.CV_CAP_PROP_POS_FRAMES,0); 
@@ -132,7 +137,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-t', "--broker_ip", action="store", help="Specify the broker IP, default is localhost", default="localhost", dest="broker_ip")
     parser.add_argument('-p', "--broker_port", action="store", help="Specify the broker Port, default is 5570", default=5570, type=int, dest="broker_port")
-    parser.add_argument('-c', "--cam_id", action="store", help="Specify the local camera idx", default="0", dest="cam_idx")
+    parser.add_argument('-c', "--cam_id", action="store", help="Specify the local camera idx", default=0, type=int, dest="cam_idx")
     parser.add_argument('-l', "--video_location", action="store", help="Specify the input video full path", dest="video_path")
     parser.add_argument('-i', "--client_id", action="store", help="Specify the client id and it shall be pair with stream in", required=True, type=int, dest="client_id")
     results = parser.parse_args()
