@@ -41,4 +41,5 @@ Note: You can also disable OpenCV, CUDNN and CUDA in make file according to your
      
 #Demo weight    
 1. For training, you can use the initiated weight for your training http://pan.baidu.com/s/1mhKJ67u        
-2. For detection, you can use the trained weight for 20 category demos http://pan.baidu.com/s/1c1btRC       
+2. For detection, you can use the trained weight for 20 category demos http://pan.baidu.com/s/1c1btRC     
+3. For detection, you can use the trained weight for 80 category demos https://pan.baidu.com/s/1o7VIuYu
