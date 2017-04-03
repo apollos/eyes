@@ -35,6 +35,7 @@ class ClientTask():
         socket.connect('tcp://%s:%d' % (self.ip, self.port))
         tprint('Client [%d] started' % (self.id))
         reqs = 0
+        cv2.namedWindow("camera_Capture", cv.CV_WINDOW_NORMAL) 
         if(self.video_path == None or self.video_path == ""):
             videInfo = VideoCapture(camIdx=self.cam_idx)
         else:
@@ -42,10 +43,11 @@ class ClientTask():
         if (videInfo.setProperty()):
             while True:
                 reqs = reqs + 1
-                imgData = videInfo.getImage()
+                imgData, showImg = videInfo.getImage()
                 if (not imgData is None):
                     try:
                         socket.send(imgData)
+                        cv2.imshow("camera_Capture", showImg)
                         if(videInfo.getInputKey()):
                             break
                     except KeyboardInterrupt:
@@ -55,7 +57,7 @@ class ClientTask():
                     break
         socket.close()
         context.term()
-        #cv2.destroyAllWindows()  /home/yu/workspace/Data/video/car.mp4
+        cv2.destroyAllWindows() 
 
 class VideoCapture():
     def __init__(self, camIdx=-1, firstFrame=None, fps=25, w=640, h=480, quality=100, videoPath=None):
@@ -88,7 +90,7 @@ class VideoCapture():
             return None
         data = np.array(imgencode)
         #stringData = data.tostring()
-        return data
+        return data, img
 
     def getInputKey(self):
         if cv2.waitKey(int(1000/self.fps)) & 0xff == ord('q'):  
@@ -120,8 +122,7 @@ class VideoCapture():
             return False
         #self.camera.set(cv.CV_CAP_PROP_FPS, self.fps);
         self.camera.set(cv.CV_CAP_PROP_FRAME_WIDTH, self.w)  
-        self.camera.set(cv.CV_CAP_PROP_FRAME_HEIGHT, self.h) 
-        #cv2.namedWindow("camera_Capture", cv.CV_WINDOW_AUTOSIZE) 
+        self.camera.set(cv.CV_CAP_PROP_FRAME_HEIGHT, self.h)         
         return True 
         
 
