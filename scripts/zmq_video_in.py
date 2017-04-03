@@ -37,9 +37,9 @@ class ClientTask():
         reqs = 0
         cv2.namedWindow("camera_Capture", cv.CV_WINDOW_NORMAL) 
         if(self.video_path == None or self.video_path == ""):
-            videInfo = VideoCapture(camIdx=self.cam_idx)
+            videInfo = VideoCapture(camIdx=self.cam_idx, fps=15, quality=80)
         else:
-            videInfo = VideoCapture(videoPath = self.video_path)
+            videInfo = VideoCapture(videoPath = self.video_path, quality=75)
         if (videInfo.setProperty()):
             while True:
                 reqs = reqs + 1
