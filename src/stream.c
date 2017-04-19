@@ -151,9 +151,6 @@ void stream(int gpu_id, char *cfgfile, char *weightfile, const char *ip_addr, co
     for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = (float *)calloc(l.classes, sizeof(float));
 
     int count = 0;
-    cvNamedWindow("Stream", CV_WINDOW_NORMAL);
-	cvMoveWindow("Stream", 0, 0);
-	cvResizeWindow("Stream", 1352, 1013);
 	int picH=480;
 	int picW=640;
 	IplImage* imgShow = cvCreateImageHeader(cvSize(picW, picH), IPL_DEPTH_8U, 3);
