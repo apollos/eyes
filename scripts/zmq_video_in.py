@@ -39,7 +39,7 @@ class ClientTask():
         if(self.video_path == None or self.video_path == ""):
             videInfo = VideoCapture(camIdx=self.cam_idx, fps=15, quality=80)
         else:
-            videInfo = VideoCapture(videoPath = self.video_path, quality=75)
+            videInfo = VideoCapture(videoPath = self.video_path, quality=75, fps=10)
         if (videInfo.setProperty()):
             while True:
                 reqs = reqs + 1
